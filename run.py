@@ -40,13 +40,10 @@ def train(args, data):
         last_epoch = present_epoch
 
         p1, p2 = model(batch)
-        print(batch.s_idx)
-        print(batch.e_idx)
+
         optimizer.zero_grad()
-        print(len(batch.s_idx))
-        print(p2.size())
         batch_loss = criterion(p1, batch.s_idx) + criterion(p2, batch.e_idx)
-        print('gggg')
+
         loss += batch_loss.item()
         batch_loss.backward()
         optimizer.step()

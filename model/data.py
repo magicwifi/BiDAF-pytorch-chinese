@@ -12,7 +12,7 @@ import logging
 jieba.setLogLevel(logging.INFO)
 
 regex = re.compile(r'[^\u4e00-\u9fa5aA-Za-z0-9]')
-jieba.load_userdict("/Users/zhuangzhuanghuang/Code/BiDAF-pytorch-chinese/company_dict.txt")
+jieba.load_userdict("/Users/zhuangzhuanghuang/Code/BiDAF-pytorch-chinesep/company_dict.txt")
 
 def word_cut(text):
     text = regex.sub(' ', text)
@@ -41,15 +41,16 @@ class SQuAD():
         if not os.path.exists(f'{path}/{args.dev_file}l'):
             self.preprocess_file(f'{path}/{args.dev_file}')
 
+
         self.RAW = data.RawField()
         # explicit declaration for torchtext compatibility
         self.RAW.is_target = False
         self.CHAR_NESTING = data.Field(batch_first=True, tokenize=list)
         self.CHAR = data.NestedField(self.CHAR_NESTING, tokenize=word_cut)
-        self.WORD = data.Field(batch_first=True, tokenize=word_cut, lower=True, include_lengths=True)
+        self.WORD = data.Field(batch_first=True, tokenize=word_cut, include_lengths=True)
         self.LABEL = data.Field(sequential=False, unk_token=None, use_vocab=False)
 
-        dict_fields = {'id': ('id', self.LABEL),
+        dict_fields = {'id': ('id', self.RAW),
                        's_idx': ('s_idx', self.LABEL),
                        'e_idx': ('e_idx', self.LABEL),
                        'context': [('c_word', self.WORD), ('c_char', self.CHAR)],
@@ -66,7 +67,7 @@ class SQuAD():
 
             self.train = data.Dataset(examples=train_examples, fields=list_fields)
             self.dev = data.Dataset(examples=dev_examples, fields=list_fields)
-            print(len(self.train[0].c_char))
+
         else:
             print("building splits...")
             self.train, self.dev = data.TabularDataset.splits(
@@ -76,7 +77,7 @@ class SQuAD():
                 format='json',
                 fields=dict_fields)
 
-            print(self.train[0].c_char[0])
+
 
             os.makedirs(dataset_path)
             torch.save(self.train.examples, train_examples_path)

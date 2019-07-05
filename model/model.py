@@ -83,15 +83,13 @@ class BiDAF(nn.Module):
 
             # (batch * seq_len, 1, char_dim, word_len)
             x = x.view(-1, self.args.char_dim, x.size(2)).unsqueeze(1)
-            print(x.size())
+
             # (batch * seq_len, char_channel_size, 1, conv_len) -> (batch * seq_len, char_channel_size, conv_len)
             x = self.char_conv(x)
-            print(x.size())
+
             x = x.squeeze(2)
-            print(x.size())
-            print("----")
             # (batch * seq_len, char_channel_size, 1) -> (batch * seq_len, char_channel_size)
-            print(x.size())
+
             x = F.max_pool1d(x, x.size(2)).squeeze()
             # (batch, seq_len, char_channel_size)
             x = x.view(batch_size, -1, self.args.char_channel_size)
@@ -105,13 +103,10 @@ class BiDAF(nn.Module):
             :return: (batch, seq_len, hidden_size * 2)
             """
             # (batch, seq_len, char_channel_size + word_dim)
-            print(x1.size())
-            print(x2.size())
+
             x = torch.cat([x1, x2], dim=-1)
 
             for i in range(2):
-                print("kkkk")
-                print(x.size())
                 h = getattr(self, f'highway_linear{i}')(x)
                 g = getattr(self, f'highway_gate{i}')(x)
                 x = g * h + (1 - g) * x
@@ -191,7 +186,7 @@ class BiDAF(nn.Module):
         c_lens = batch.c_word[1]
         q_lens = batch.q_word[1]
 
-        print(c_word.size())
+
         # Highway network
          #  c word_(batch, seq_len, word_dim)
          #  return (batch, seq_len, hidden_size * 2)
