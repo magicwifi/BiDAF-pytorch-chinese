@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 import argparse
 import copy, json, os
 
@@ -116,7 +117,7 @@ def test(model, ema, args, data):
                 param.data.copy_(backup_params.get(name))
 
     with open(args.prediction_file, 'w', encoding='utf-8') as f:
-        print(json.dumps(answers), file=f)
+        print(json.dumps(answers, ensure_ascii=False), file=f)
 
     results = evaluate.main(args)
     return loss, results['exact_match'], results['f1']
