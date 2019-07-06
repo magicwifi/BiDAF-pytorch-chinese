@@ -28,8 +28,8 @@ def normalize_answer(s):
 
 
 def f1_score(prediction, ground_truth):
-    prediction_tokens = normalize_answer(prediction).split()
-    ground_truth_tokens = normalize_answer(ground_truth).split()
+    prediction_tokens = (prediction)
+    ground_truth_tokens = (ground_truth)
     common = Counter(prediction_tokens) & Counter(ground_truth_tokens)
     num_same = sum(common.values())
     if num_same == 0:
@@ -41,14 +41,14 @@ def f1_score(prediction, ground_truth):
 
 
 def exact_match_score(prediction, ground_truth):
-    return (normalize_answer(prediction) == normalize_answer(ground_truth))
+    return ((prediction) == (ground_truth))
 
 
 def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
     scores_for_ground_truths = []
-    for ground_truth in ground_truths:
-        score = metric_fn(prediction, ground_truth)
-        scores_for_ground_truths.append(score)
+
+    score = metric_fn(prediction, ground_truths)
+    scores_for_ground_truths.append(score)
     return max(scores_for_ground_truths)
 
 
@@ -61,8 +61,10 @@ def evaluate(dataset, predictions):
             ' will receive score 0.'
             print(message, file=sys.stderr)
             continue
-        ground_truths = list(map(lambda x: article['question'], article['answer']))
+        ground_truths = article['answer']
         prediction = predictions[article['id']]
+
+        #print(prediction)
         exact_match += metric_max_over_ground_truths(exact_match_score, prediction, ground_truths)
         f1 += metric_max_over_ground_truths(f1_score, prediction, ground_truths)
 
