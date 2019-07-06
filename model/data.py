@@ -12,9 +12,9 @@ import logging
 jieba.setLogLevel(logging.INFO)
 
 regex = re.compile(r'[^\u4e00-\u9fa5aA-Za-z0-9]')
+jieba.load_userdict("/Users/zhuangzhuanghuang/Code/BiDAF-pytorch-chinese/company_dict.txt")
 
 def word_cut(text):
-    jieba.load_userdict("/Users/zhuangzhuanghuang/Code/BiDAF-pytorch-chinese/company_dict.txt")
     text = regex.sub(' ', text)
     return [word for word in jieba.cut(text) if word.strip()]
 
