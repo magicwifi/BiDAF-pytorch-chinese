@@ -34,12 +34,15 @@ class SQuAD():
         dataset_path = path + '/torchtext/'
         train_examples_path = dataset_path + 'train_examples.pt'
         dev_examples_path = dataset_path + 'dev_examples.pt'
+        test_examples_path = dataset_path + 'test_examples.pt'
 
         print("preprocessing data files...")
         if not os.path.exists(f'{path}/{args.train_file}l'):
             self.preprocess_file(f'{path}/{args.train_file}')
         if not os.path.exists(f'{path}/{args.dev_file}l'):
             self.preprocess_file(f'{path}/{args.dev_file}')
+        if not os.path.exists(f'{path}/{args.test_file}l'):
+            self.preprocess_file(f'{path}/{args.test_file}')
 
 
         self.RAW = data.RawField()
@@ -64,16 +67,19 @@ class SQuAD():
             print("loading splits...")
             train_examples = torch.load(train_examples_path)
             dev_examples = torch.load(dev_examples_path)
+            test_examples = torch.load(test_examples_path)
 
             self.train = data.Dataset(examples=train_examples, fields=list_fields)
             self.dev = data.Dataset(examples=dev_examples, fields=list_fields)
+            self.test = data.Dataset(examples=test_examples, fields=list_fields)
 
         else:
             print("building splits...")
-            self.train, self.dev = data.TabularDataset.splits(
+            self.train, self.dev, self.test = data.TabularDataset.splits(
                 path=path,
                 train=f'{args.train_file}l',
                 validation=f'{args.dev_file}l',
+                test=f'{args.test_file}l',
                 format='json',
                 fields=dict_fields)
 
@@ -82,20 +88,21 @@ class SQuAD():
             os.makedirs(dataset_path)
             torch.save(self.train.examples, train_examples_path)
             torch.save(self.dev.examples, dev_examples_path)
+            torch.save(self.test.examples, test_examples_path)
 
         #cut too long context in the training set for efficiency.
 
 
         vectors = load_word_vectors('sgns.zhihu.word', 'pretrained')
         print("building vocab...")
-        self.CHAR.build_vocab(self.train, self.dev)
-        self.WORD.build_vocab(self.train, self.dev, vectors=vectors)
+        self.CHAR.build_vocab(self.train, self.dev, self.test)
+        self.WORD.build_vocab(self.train, self.dev, self.test,vectors=vectors)
 
         print("building iterators...")
         device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
-        self.train_iter, self.dev_iter = \
-            data.BucketIterator.splits((self.train, self.dev),
-                                       batch_sizes=[args.train_batch_size, args.dev_batch_size],
+        self.train_iter, self.dev_iter,self.test_iter = \
+            data.BucketIterator.splits((self.train, self.dev, self.test),
+                                       batch_sizes=[args.train_batch_size, args.dev_batch_size, args.test_batch_size],
                                        device=device,
                                        sort_key=lambda x: len(x.c_word))
 
