@@ -83,6 +83,7 @@ def test(model, ema, args, data):
     criterion = nn.CrossEntropyLoss()
     loss = 0
     answers = dict()
+    answers_test = dict()
     model.eval()
 
     backup_params = EMA(0)
@@ -112,12 +113,34 @@ def test(model, ema, args, data):
                 answer = ' '.join([data.WORD.vocab.itos[idx] for idx in answer])
                 answers[id] = answer
 
+        for batch in iter(data.test_iter):
+            p1, p2 = model(batch)
+
+
+            # (batch, c_len, c_len)
+            batch_size, c_len = p1.size()
+            ls = nn.LogSoftmax(dim=1)
+            mask = (torch.ones(c_len, c_len) * float('-inf')).to(device).tril(-1).unsqueeze(0).expand(batch_size, -1, -1)
+            score = (ls(p1).unsqueeze(2) + ls(p2).unsqueeze(1)) + mask
+            score, s_idx = score.max(dim=1)
+            score, e_idx = score.max(dim=1)
+            s_idx = torch.gather(s_idx, 1, e_idx.view(-1, 1)).squeeze()
+
+            for i in range(batch_size):
+                id = batch.id[i]
+                answer = batch.c_word[0][i][s_idx[i]:e_idx[i]+1]
+                answer = ' '.join([data.WORD.vocab.itos[idx] for idx in answer])
+                answers_test[id] = answer
+
         for name, param in model.named_parameters():
             if param.requires_grad:
                 param.data.copy_(backup_params.get(name))
 
     with open(args.prediction_file, 'w', encoding='utf-8') as f:
         print(json.dumps(answers, ensure_ascii=False), file=f)
+
+    with open(args.prediction_test_file, 'w', encoding='utf-8') as f:
+        print(json.dumps(answers_test, ensure_ascii=False), file=f)
 
     results = evaluate.main(args)
     return loss, results['exact_match'], results['f1']
@@ -151,6 +174,7 @@ def main():
     setattr(args, 'word_vocab_size', len(data.WORD.vocab))
     setattr(args, 'dataset_file', f'.data/squad/{args.dev_file}')
     setattr(args, 'prediction_file', f'prediction{args.gpu}.out')
+    setattr(args, 'prediction_test_file', f'prediction_test_{args.gpu}.out')
     setattr(args, 'model_time', strftime('%H:%M:%S', gmtime()))
     print('data loading complete!')
 
