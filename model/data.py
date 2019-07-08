@@ -6,17 +6,11 @@ import torch
 from torchtext import data
 from torchtext import datasets
 
-import re
-import jieba
 import logging
-jieba.setLogLevel(logging.INFO)
 
-regex = re.compile(r'[^\u4e00-\u9fa5aA-Za-z0-9]')
-jieba.load_userdict("/dev/BiDAF-pytorch-chinese/company_dict.txt")
 
 def word_cut(text):
-    text = regex.sub(' ', text)
-    return [word for word in jieba.cut(text) if word.strip()]
+    return [word for word in text.split()]
 
 
 from torchtext.vocab import Vectors
@@ -24,8 +18,6 @@ from torchtext.vocab import Vectors
 def load_word_vectors(model_name, model_path):
     vectors = Vectors(name=model_name, cache=model_path)
     return vectors
-
-
 
 
 class SQuAD():
